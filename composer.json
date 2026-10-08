@@ -1,0 +1,16 @@
+{
+    "name": "bonsai-digital-collective/bonsai-post-expiry",
+    "description": "Set an expiry date and time on any WordPress post. When it passes, the post is switched to Draft.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "config": {
+        "autoloader-suffix": "BonsaiPostExpiry",
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "7.4"
+        }
+    },
+    "require": {
+        "yahnis-elsts/plugin-update-checker": "^5.6"
+    }
+}

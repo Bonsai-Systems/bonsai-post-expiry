@@ -1,0 +1,7 @@
+# vendor/ is committed on purpose: release zips and the updater need it.
+/build/
+.DS_Store
+Thumbs.db
+*.zip
+.idea/
+.vscode/

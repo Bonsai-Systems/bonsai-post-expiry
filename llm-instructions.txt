@@ -1,0 +1,55 @@
+BONSAI POST EXPIRY — LLM INSTRUCTIONS
+=====================================
+
+WHAT IT IS
+WordPress plugin by The Bonsai Digital Collective. Adds an expiry date/time box
+to every public post type's edit screen. When the time passes, publish/future/
+private posts switch to Draft. Overview screen: Bonsai > Post Expiry
+(admin.php?page=bonsai-post-expiry, via the bundled Bonsai Hub in lib/bonsai-hub/).
+Overview capability: edit_others_posts. No settings screen.
+Version 1.1.0. WP 5.8+, PHP 7.4+. Prefix: bpe / BPE_. Text domain: bonsai-post-expiry.
+Repo: https://github.com/Bonsai-Systems/bonsai-post-expiry
+
+FILES
+bonsai-post-expiry.php     bootstrap, duplicate guard, constants BPE_VERSION/FILE/PATH/URL, (de)activation hooks
+inc/class-bpe-updater.php  plugin-update-checker (GitHub release asset zip)
+inc/class-bpe-expiry.php   meta box, save(), expire(), sweep(), list column, upcoming()/recently_expired(), activate/maybe_upgrade/deactivate
+inc/class-bpe-admin.php    Bonsai Hub module (overview), Plugins-row "Overview" link
+assets/admin.js            jQuery box behaviour; config in BPE_EXPIRY (defaultTime)
+assets/admin.css           box layout, .bpe-expired, overview table
+lib/bonsai-hub/            bundled hub, synced from the bonsai-hub repo. Never edit here.
+
+STORAGE (never rename: live sites depend on them)
+_bpe_expires     post meta, pending expiry, UTC unix timestamp
+_bpe_expired_at  post meta, when it expired
+bpe_version      option, last version that ran maybe_upgrade()
+bpe_expire_post  single cron event per post (arg: post ID)
+bpe_sweep        hourly cron safety net (max 100 posts per run)
+
+FLOW
+save_post (needs bpe_nonce, so quick edit/REST/cron saves are ignored) ->
+store timestamp -> schedule bpe_expire_post at max(ts, now) -> expire()
+re-checks meta, switches to draft, fires bpe_post_expired, swaps
+_bpe_expires for _bpe_expired_at. Sweep catches missed events.
+
+HOOKS
+bpe_post_types (filter)   post types with the box/column/overview
+bpe_post_expired (action) ($post_id, $post) after switching to draft
+BPE_Expiry::DEFAULT_TIME  '23:59' when only a date is picked
+
+RULES
+- WordPress Coding Standards: tabs, Yoda conditions, escape all output.
+- Store UTC timestamps; convert with wp_timezone()/wp_date() for display. UI format d/m/Y H:i.
+- No inline JS or styles. jQuery only, event namespace bonsai_bpe.
+- UK English in UI copy.
+- Test expiry changes on staging (past, future and cleared dates). The plugin unpublishes live content.
+- Update CHANGELOG.md and bump the version in both the plugin header and
+  BPE_VERSION for releases.
+
+RELEASES
+Bump both versions, push main, publish a GitHub release tagged vX.Y.Z. The
+release workflow attaches bonsai-post-expiry.zip; sites update from that only.
+vendor/ is committed. Keep composer.json config.autoloader-suffix
+(BonsaiPostExpiry) and never copy vendor/ from another plugin, or the Composer
+autoloader class clashes with other Bonsai plugins. Listed in the Bonsai Hub
+Plugins catalogue from hub 1.0.2.

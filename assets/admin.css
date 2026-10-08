@@ -1,0 +1,32 @@
+/**
+ * Bonsai Post Expiry admin styles.
+ *
+ * Loaded on supported edit and list screens, and on Bonsai → Post Expiry
+ * (after the hub's bonsai-admin-ui.css).
+ */
+
+/* Edit-screen box -------------------------------------------------------- */
+
+.bpe-box__field label {
+	display: block;
+	margin-bottom: 4px;
+}
+
+.bpe-box__field input {
+	width: 100%;
+}
+
+/* "Expired on …" in the box and "Expired …" in the list column. Core's error red, 6.2:1 on white. */
+.bpe-expired {
+	color: #b32d2e;
+}
+
+/* Overview screen -------------------------------------------------------- */
+
+.bpe-table td {
+	vertical-align: top;
+}
+
+.bpe-table .bonsai-ui-badge {
+	margin-top: 4px;
+}
