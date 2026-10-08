@@ -24,7 +24,16 @@ The plugin's screen in the shared **Bonsai** admin menu lists:
 - **Upcoming expiries**, soonest first, with each post's type and status and how long it has left. Anything overdue is marked **Due on next cron run**.
 - **Recently expired**: the last 20 posts to expire, with their current status.
 
-Editors and Administrators can see it (`edit_others_posts`). There are no settings, because expiries are set on each post.
+Editors and Administrators can see it (`edit_others_posts`).
+
+## Required expiry dates
+
+Under **Bonsai → Post Expiry → Settings** (Administrators only), tick the categories whose posts must have an expiry date, e.g. **Events**. It works on any post type that has the Post Expiry box and uses categories.
+
+A post in a ticked category then can't be published, scheduled or updated until it has an expiry date. Drafts can still be saved without one. The Post Expiry box lists the required categories.
+
+- **Block editor:** a warning shows at the top of the editor, and the Publish button in the pre-publish panel (or Update on a live post) is disabled until you add a date. If pre-publish checks are turned off, publishing is refused on recent WordPress versions; on older ones it isn't blocked, so leave pre-publish checks on.
+- **Classic editor:** clicking Publish, Schedule or Update shows a message in the Post Expiry box. If that check is bypassed, a new post is saved as a draft with a notice. A post that is already live is never taken down by this check; it saves with a warning.
 
 The screen also warns you if:
 
@@ -84,6 +93,15 @@ add_filter( 'bpe_post_types', function ( $types ) {
 } );
 ```
 
+Change which categories need an expiry date in code (term IDs). This runs after the Settings tab:
+
+```php
+add_filter( 'bpe_required_categories', function ( $ids ) {
+	$ids[] = 12;
+	return $ids;
+} );
+```
+
 Do something when a post expires, e.g. send a notification, call a Make.com webhook or purge a cache:
 
 ```php
@@ -94,4 +112,4 @@ add_action( 'bpe_post_expired', function ( $post_id, $post ) {
 
 The default time is the `BPE_Expiry::DEFAULT_TIME` constant (`23:59`).
 
-Stored data: `_bpe_expires` (pending expiry, UTC timestamp) and `_bpe_expired_at` (when it expired) in post meta, plus the `bpe_version` option. Deleting the plugin leaves these in place.
+Stored data: `_bpe_expires` (pending expiry, UTC timestamp) and `_bpe_expired_at` (when it expired) in post meta, plus the `bpe_version` and `bpe_settings` options. Deleting the plugin leaves these in place.

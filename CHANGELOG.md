@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-08
+
+### Added
+- **Settings** tab under Bonsai → Post Expiry (Administrators only, `manage_options`). Tick the post categories that need an expiry date. Stored in the non-autoloaded `bpe_settings` option with the Settings API.
+- Required expiry: a post in a ticked category can't be published, scheduled or updated without an expiry date. Drafts can still be saved without one.
+  - Classic editor: Publish / Schedule / Update is stopped with a message in the Post Expiry box. If the script doesn't run, the server saves a new publish as Draft and says why. A post that is already live is never unpublished by this check; it gets a warning instead.
+  - Block editor (`assets/admin-block.js`): a warning notice shows, and saving is locked while the pre-publish panel is open and on posts that are already live or scheduled. Where the editor supports `editor.preSavePost`, publishing with pre-publish checks turned off is refused too.
+  - The Post Expiry box lists the required categories.
+- `bpe_required_categories` filter.
+
+### Changed
+- Bonsai → Post Expiry now has **Overview** and **Settings** tabs. Editors only see Overview.
+- `BPE_Expiry::save()` reads the nonce and date through new `box_submitted()` and `posted_timestamp()` helpers, shared with the required check. Saving behaves the same.
+
 ## [1.1.0] - 2026-10-08
 
 ### Added

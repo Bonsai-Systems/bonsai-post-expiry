@@ -3,9 +3,9 @@
  * Bonsai → Post Expiry: an overview of upcoming and recent expiries.
  *
  * The screen is registered with the shared Bonsai Hub (lib/bonsai-hub/),
- * which prints the header, plugin nav and page shell. This class only prints
- * the overview content. There are no settings: expiries are set per post
- * from the edit screen.
+ * which prints the header, plugin nav, tab bar and page shell. This class
+ * prints the Overview tab; the Settings tab (admins only) is BPE_Settings.
+ * Expiry dates themselves are set per post from the edit screen.
  *
  * @package BonsaiPostExpiry
  */
@@ -55,7 +55,17 @@ class BPE_Admin {
 			'repo'        => BPE_Updater::REPO,
 			'capability'  => self::CAPABILITY,
 			'enqueue'     => array( __CLASS__, 'assets' ),
-			'render'      => array( __CLASS__, 'render' ),
+			'tabs'        => array(
+				'overview' => array(
+					'label'  => __( 'Overview', 'bonsai-post-expiry' ),
+					'render' => array( __CLASS__, 'render' ),
+				),
+				'settings' => array(
+					'label'      => __( 'Settings', 'bonsai-post-expiry' ),
+					'capability' => BPE_Settings::CAPABILITY,
+					'render'     => array( 'BPE_Settings', 'render' ),
+				),
+			),
 		);
 
 		return $modules;
@@ -204,9 +214,10 @@ class BPE_Admin {
 			<p>
 				<?php
 				printf(
-					/* translators: 1: filter name, 2: action name */
-					esc_html__( 'Developers: limit post types with the %1$s filter. Hook into %2$s to send notifications or purge caches when a post expires.', 'bonsai-post-expiry' ),
+					/* translators: 1: filter name, 2: filter name, 3: action name */
+					esc_html__( 'Developers: limit post types with the %1$s filter and required categories with %2$s. Hook into %3$s to send notifications or purge caches when a post expires.', 'bonsai-post-expiry' ),
 					'<code>bpe_post_types</code>',
+					'<code>bpe_required_categories</code>',
 					'<code>bpe_post_expired</code>'
 				);
 				?>
