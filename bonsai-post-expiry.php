@@ -3,7 +3,7 @@
  * Plugin Name:       Bonsai Post Expiry
  * Plugin URI:        https://github.com/Bonsai-Systems/bonsai-post-expiry
  * Description:       Set an expiry date and time on any post. When it passes, the post is switched to Draft. Upcoming and recent expiries are listed under Bonsai → Post Expiry.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Author:            The Bonsai Digital Collective
  * Author URI:        https://bonsaidigitalcollective.co.uk/
  * Update URI:        https://github.com/Bonsai-Systems/bonsai-post-expiry
@@ -32,7 +32,7 @@ if ( defined( 'BPE_VERSION' ) ) {
 	return;
 }
 
-define( 'BPE_VERSION', '1.1.0' );
+define( 'BPE_VERSION', '1.2.0' );
 define( 'BPE_FILE', __FILE__ );
 define( 'BPE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BPE_URL', plugin_dir_url( __FILE__ ) );
@@ -42,6 +42,8 @@ define( 'BPE_URL', plugin_dir_url( __FILE__ ) );
 require_once BPE_PATH . 'lib/bonsai-hub/bonsai-hub.php';
 require_once BPE_PATH . 'inc/class-bpe-updater.php';
 require_once BPE_PATH . 'inc/class-bpe-expiry.php';
+require_once BPE_PATH . 'inc/class-bpe-settings.php';
+require_once BPE_PATH . 'inc/class-bpe-required.php';
 require_once BPE_PATH . 'inc/class-bpe-admin.php';
 
 BPE_Updater::init();
@@ -53,6 +55,8 @@ BPE_Expiry::init();
 add_action(
 	'plugins_loaded',
 	function () {
+		BPE_Settings::init();
+		BPE_Required::init();
 		BPE_Admin::init();
 	}
 );

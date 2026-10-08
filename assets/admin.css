@@ -16,9 +16,29 @@
 	width: 100%;
 }
 
-/* "Expired on …" in the box and "Expired …" in the list column. Core's error red, 6.2:1 on white. */
-.bpe-expired {
+/* "Expired on …" in the box, "Expired …" in the list column and the
+   required-date error. Core's error red, 6.2:1 on white. */
+.bpe-expired,
+.bpe-box__error {
 	color: #b32d2e;
+}
+
+.bpe-box__error {
+	font-weight: 600;
+}
+
+/* Settings tab: child categories indented under their parents ------------ */
+
+.bpe-cat--depth-1 {
+	margin-left: 1.5em;
+}
+
+.bpe-cat--depth-2 {
+	margin-left: 3em;
+}
+
+.bpe-cat--depth-3 {
+	margin-left: 4.5em;
 }
 
 /* Overview screen -------------------------------------------------------- */

@@ -91,14 +91,24 @@ final class BPE_Expiry {
 			return;
 		}
 
+		$required = BPE_Required::categories_for_type( $screen->post_type );
+
 		wp_enqueue_script( 'bpe-admin', BPE_URL . 'assets/admin.js', array( 'jquery' ), BPE_VERSION, true );
 		wp_localize_script(
 			'bpe-admin',
 			'BPE_EXPIRY',
 			array(
-				'defaultTime' => self::DEFAULT_TIME,
+				'defaultTime'     => self::DEFAULT_TIME,
+				'required'        => $required,
+				'requiredMessage' => $required ? BPE_Required::message() : '',
 			)
 		);
+
+		// The block editor only exposes categories and save locking through
+		// wp.data, so its required-expiry check lives in its own script.
+		if ( $required && method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor() ) {
+			wp_enqueue_script( 'bpe-admin-block', BPE_URL . 'assets/admin-block.js', array( 'bpe-admin', 'wp-data', 'wp-hooks', 'wp-editor', 'wp-notices' ), BPE_VERSION, true );
+		}
 	}
 
 	/* -------------------------------------------------------------------------
@@ -122,8 +132,9 @@ final class BPE_Expiry {
 	}
 
 	/**
-	 * Print the date/time fields. Behaviour (default time, clear button) is in
-	 * assets/admin.js.
+	 * Print the date/time fields, plus a note when the post type has required
+	 * categories. Behaviour (default time, clear button, required check) is
+	 * in assets/admin.js and assets/admin-block.js.
 	 *
 	 * @param WP_Post $post Post being edited.
 	 * @return void
@@ -151,6 +162,18 @@ final class BPE_Expiry {
 				<label for="bpe_time"><strong><?php esc_html_e( 'Time', 'bonsai-post-expiry' ); ?></strong></label>
 				<input type="time" id="bpe_time" name="bpe_time" value="<?php echo esc_attr( $time ); ?>">
 			</p>
+			<?php if ( BPE_Required::categories_for_type( $post->post_type ) ) : ?>
+				<p class="description bpe-box__required">
+					<?php
+					printf(
+						/* translators: %s: category names, e.g. "Events, Courses" */
+						esc_html__( 'Required before publishing for posts in: %s.', 'bonsai-post-expiry' ),
+						esc_html( BPE_Required::category_names() )
+					);
+					?>
+				</p>
+				<p class="bpe-box__error" role="alert" hidden></p>
+			<?php endif; ?>
 			<p>
 				<button type="button" class="button-link" id="bpe_clear"><?php esc_html_e( 'Clear expiry', 'bonsai-post-expiry' ); ?></button>
 			</p>
@@ -190,7 +213,7 @@ final class BPE_Expiry {
 	 * @return void
 	 */
 	public static function save( $post_id, $post ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Signature set by save_post.
-		if ( ! isset( $_POST[ self::NONCE ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), 'bpe_save' ) ) {
+		if ( ! self::box_submitted() ) {
 			return; // Also bails for quick edit, REST-only saves and our own cron update.
 		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || wp_is_post_revision( $post_id ) ) {
@@ -202,29 +225,52 @@ final class BPE_Expiry {
 
 		self::unschedule( $post_id );
 
-		$date = isset( $_POST['bpe_date'] ) ? sanitize_text_field( wp_unslash( $_POST['bpe_date'] ) ) : '';
-		$time = isset( $_POST['bpe_time'] ) ? sanitize_text_field( wp_unslash( $_POST['bpe_time'] ) ) : '';
-
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+		$ts = self::posted_timestamp();
+		if ( ! $ts ) {
 			delete_post_meta( $post_id, self::META );
 			return;
+		}
+
+		update_post_meta( $post_id, self::META, $ts );
+		delete_post_meta( $post_id, self::META_DONE );
+
+		// Past dates fire on the next cron run.
+		wp_schedule_single_event( max( $ts, time() ), self::HOOK, array( (int) $post_id ) );
+	}
+
+	/**
+	 * Whether this request is a save from the edit screen with our box on it
+	 * (valid nonce).
+	 *
+	 * @return bool
+	 */
+	public static function box_submitted() {
+		return isset( $_POST[ self::NONCE ] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), 'bpe_save' );
+	}
+
+	/**
+	 * The expiry submitted in the box as a UTC timestamp, or 0 if the date is
+	 * empty or invalid. A missing or invalid time falls back to DEFAULT_TIME.
+	 * Callers check box_submitted() first.
+	 *
+	 * @return int
+	 */
+	public static function posted_timestamp() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Callers verify the nonce with box_submitted().
+		$date = isset( $_POST['bpe_date'] ) ? sanitize_text_field( wp_unslash( $_POST['bpe_date'] ) ) : '';
+		$time = isset( $_POST['bpe_time'] ) ? sanitize_text_field( wp_unslash( $_POST['bpe_time'] ) ) : '';
+		// phpcs:enable
+
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			return 0;
 		}
 		if ( ! preg_match( '/^\d{2}:\d{2}$/', $time ) ) {
 			$time = self::DEFAULT_TIME;
 		}
 
 		$dt = DateTimeImmutable::createFromFormat( 'Y-m-d H:i', $date . ' ' . $time, wp_timezone() );
-		if ( ! $dt ) {
-			delete_post_meta( $post_id, self::META );
-			return;
-		}
 
-		$ts = $dt->getTimestamp();
-		update_post_meta( $post_id, self::META, $ts );
-		delete_post_meta( $post_id, self::META_DONE );
-
-		// Past dates fire on the next cron run.
-		wp_schedule_single_event( max( $ts, time() ), self::HOOK, array( (int) $post_id ) );
+		return $dt ? $dt->getTimestamp() : 0;
 	}
 
 	/**
@@ -425,13 +471,14 @@ final class BPE_Expiry {
 	 */
 	public static function activate() {
 		self::schedule_sweep();
+		BPE_Settings::install();
 		update_option( self::VERSION_OPT, BPE_VERSION );
 	}
 
 	/**
 	 * Updates from the Plugins screen don't re-run the activation hook, so
-	 * re-check the sweep once per new version. One autoloaded option read
-	 * otherwise.
+	 * re-check the sweep (and create the settings option, new in 1.2.0) once
+	 * per new version. One autoloaded option read otherwise.
 	 *
 	 * @return void
 	 */
@@ -441,6 +488,7 @@ final class BPE_Expiry {
 		}
 
 		self::schedule_sweep();
+		BPE_Settings::install();
 		update_option( self::VERSION_OPT, BPE_VERSION );
 	}
 
