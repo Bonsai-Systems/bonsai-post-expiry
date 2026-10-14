@@ -8,7 +8,7 @@ private posts switch to Draft. Overview screen: Bonsai > Post Expiry
 (admin.php?page=bonsai-post-expiry, via the bundled Bonsai Hub in lib/bonsai-hub/).
 Overview capability: edit_others_posts. Settings tab (manage_options):
 categories that require an expiry date before publishing.
-Version 1.2.0. WP 5.8+, PHP 7.4+. Prefix: bpe / BPE_. Text domain: bonsai-post-expiry.
+Version 1.2.1. WP 5.8+, PHP 7.4+. Prefix: bpe / BPE_. Text domain: bonsai-post-expiry.
 Repo: https://github.com/Bonsai-Systems/bonsai-post-expiry
 
 FILES

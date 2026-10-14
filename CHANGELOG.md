@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-14
+
+### Changed
+- The Overview's cron notice now checks that cron is actually running, not just whether `DISABLE_WP_CRON` is set. If the hourly expiry check is more than an hour overdue, it warns that cron isn't running and says what to check: the host's server cron, or a firewall (WAF), cache or security plugin blocking `wp-cron.php`.
+- On sites where the host runs a server cron (`DISABLE_WP_CRON` set) and the hourly check is on time, the notice now confirms that it's working instead of asking you to check with the host.
+
 ## [1.2.0] - 2026-10-08
 
 ### Added
