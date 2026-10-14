@@ -3,7 +3,7 @@
  * Plugin Name:       Bonsai Post Expiry
  * Plugin URI:        https://github.com/Bonsai-Systems/bonsai-post-expiry
  * Description:       Set an expiry date and time on any post. When it passes, the post is switched to Draft. Upcoming and recent expiries are listed under Bonsai → Post Expiry.
- * Version:           1.2.0
+ * Version:           1.2.1
  * Author:            The Bonsai Digital Collective
  * Author URI:        https://bonsaidigitalcollective.co.uk/
  * Update URI:        https://github.com/Bonsai-Systems/bonsai-post-expiry
@@ -32,7 +32,7 @@ if ( defined( 'BPE_VERSION' ) ) {
 	return;
 }
 
-define( 'BPE_VERSION', '1.2.0' );
+define( 'BPE_VERSION', '1.2.1' );
 define( 'BPE_FILE', __FILE__ );
 define( 'BPE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BPE_URL', plugin_dir_url( __FILE__ ) );

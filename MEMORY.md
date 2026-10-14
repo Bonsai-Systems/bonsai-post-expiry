@@ -18,7 +18,8 @@ Decisions, gotchas and open items that aren't obvious from the code. Keep entrie
 
 ## Gotchas
 
-- With `DISABLE_WP_CRON` and no server cron, nothing expires. The overview shows a notice, but check the host's setup on every client site.
+- With `DISABLE_WP_CRON` and no server cron, nothing expires. Since 1.2.1 the overview judges cron health by how overdue `bpe_sweep` is (warns past 1 hour), not by the constant. Managed hosts set `DISABLE_WP_CRON` as standard alongside a server cron, so the old constant-only notice read as an error to clients (NEC SWS, 2026-10-14).
+- Server crons that request `wp-cron.php` over HTTP can be blocked or cached by a WAF/CDN. Ask hosts to use PHP CLI / WP-CLI, or exclude `/wp-cron.php`.
 - WP-Cron only runs on page loads. Low-traffic sites can expire a few minutes late.
 - The block editor doesn't re-render meta boxes after saving. "Expired on …" only appears after the edit screen is reloaded.
 - The sweep processes at most 100 posts per hourly run.

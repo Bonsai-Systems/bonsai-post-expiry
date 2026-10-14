@@ -31,6 +31,13 @@ class BPE_Admin {
 	const EXPIRED_LIMIT  = 20;
 
 	/**
+	 * Seconds the hourly sweep can be overdue before we say cron isn't
+	 * running. An hour of slack covers quiet sites, where WP-Cron waits for
+	 * the next visit, and server crons that only run every 15 to 30 minutes.
+	 */
+	const CRON_STALL_AFTER = 3600;
+
+	/**
 	 * Hook in.
 	 *
 	 * @return void
@@ -227,23 +234,60 @@ class BPE_Admin {
 	}
 
 	/**
-	 * Warnings for cron setups that would stop posts expiring on time.
+	 * Cron health, judged by whether the hourly sweep is running on time.
+	 *
+	 * Each sweep run reschedules the next one an hour ahead, so a sweep that
+	 * is well overdue means nothing is calling wp-cron.php. That works the
+	 * same whether WP-Cron runs on page loads or from a server cron
+	 * (DISABLE_WP_CRON), which the plugin can't see directly.
 	 *
 	 * @return void
 	 */
 	private static function render_cron_notes() {
-		$next_sweep = wp_next_scheduled( BPE_Expiry::SWEEP );
+		$next_sweep  = wp_next_scheduled( BPE_Expiry::SWEEP );
+		$server_cron = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
 
 		if ( ! $next_sweep ) {
 			echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'The hourly expiry check isn\'t scheduled. Deactivate and reactivate the plugin to restore it.', 'bonsai-post-expiry' ) . '</p></div>';
+			return;
 		}
 
-		if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) {
+		$overdue = time() - $next_sweep;
+
+		if ( $overdue > self::CRON_STALL_AFTER ) {
+			echo '<div class="notice notice-warning inline"><p>';
+			printf(
+				/* translators: %s: human-readable time difference, e.g. "3 hours" */
+				esc_html__( 'Cron doesn\'t seem to be running: the hourly expiry check is %s overdue, so posts aren\'t expiring on time.', 'bonsai-post-expiry' ),
+				esc_html( human_time_diff( $next_sweep, time() ) )
+			);
+			echo ' ';
+			if ( $server_cron ) {
+				printf(
+					/* translators: 1: DISABLE_WP_CRON, 2: wp-cron.php */
+					esc_html__( 'WP-Cron is turned off in wp-config.php (%1$s), so the host\'s server cron must call %2$s. Check it\'s running. If it calls the URL over HTTP, make sure a firewall (WAF) or cache isn\'t blocking or caching that URL.', 'bonsai-post-expiry' ),
+					'<code>DISABLE_WP_CRON</code>',
+					'<code>wp-cron.php</code>'
+				);
+			} else {
+				printf(
+					/* translators: %s: wp-cron.php */
+					esc_html__( 'WP-Cron runs when someone visits the site, so a quiet site can fall behind. Reload this page in a minute. If it\'s still overdue, check a firewall (WAF), cache or security plugin isn\'t blocking %s.', 'bonsai-post-expiry' ),
+					'<code>wp-cron.php</code>'
+				);
+			}
+			echo '</p></div>';
+			return;
+		}
+
+		if ( $server_cron ) {
+			// Reassure rather than warn: hosts that run a server cron set
+			// DISABLE_WP_CRON as standard, and the sweep shows it's working.
 			echo '<div class="notice notice-info inline"><p>';
 			printf(
-				/* translators: %s: wp-cron.php */
-				esc_html__( 'WP-Cron is disabled on this site, so posts only expire when a server cron job calls %s. Check one is set up with the host.', 'bonsai-post-expiry' ),
-				'<code>wp-cron.php</code>'
+				/* translators: %s: DISABLE_WP_CRON */
+				esc_html__( 'WP-Cron is turned off in wp-config.php (%s), so the host\'s server cron runs it instead. The hourly expiry check is on schedule, so that looks to be working.', 'bonsai-post-expiry' ),
+				'<code>DISABLE_WP_CRON</code>'
 			);
 			echo '</p></div>';
 		}

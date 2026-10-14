@@ -38,7 +38,9 @@ A post in a ticked category then can't be published, scheduled or updated until 
 The screen also warns you if:
 
 - the hourly safety check isn't scheduled (deactivate and reactivate the plugin to fix it), or
-- WP-Cron is disabled (`DISABLE_WP_CRON`). Posts then only expire when a server cron job calls `wp-cron.php`, so check one is set up with the host.
+- cron isn't running: the hourly check is more than an hour overdue, so nothing is calling `wp-cron.php`. Check the host's server cron if `DISABLE_WP_CRON` is set, and that no firewall (WAF), cache or security plugin is blocking or caching `wp-cron.php`.
+
+If the host runs a server cron (`DISABLE_WP_CRON` set) and the hourly check is on time, the screen says so. That's a normal setup and needs no action.
 
 ## How it works
 
